@@ -1,0 +1,28 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# LaTeX build artifacts
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.bbl
+paper/*.blg
+paper/*.synctex.gz
+
+# Hopsan run logs
+hopsan_logfile.txt
+**/hopsan_logfile.txt
+logs/
+
+# model-editing backups
+*.bak
+
+# Third-party / not ours to redistribute
+Hydraulic Cylinder Position Control Mechanism.pdf
+Lab_Cylinder_model.slx
+Lab_Cylinder_model.slx.textClipping
+
+# gstack / tooling
+.gstack/

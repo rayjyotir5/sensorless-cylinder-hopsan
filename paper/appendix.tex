@@ -1,0 +1,285 @@
+\section{Full Parameter Set}\label{app:params}
+Table~\ref{tab:fullparams} lists every parameter, complementing the abbreviated
+Table~\ref{tab:sensors}. The temperature curves are
+$\beta_e(T)=\beta_0\,[1+k_\beta(T-T_0)]$ with $\beta_0=1.5$\,GPa, $T_0=20$,
+$k_\beta=-0.005\,$\textdegree C$^{-1}$ (clamped at $0.3$\,GPa);
+$\mu(T)=\mu_{40}\exp\!\big(B(1/T_K-1/T_{K,40})\big)$ (Vogel-like) with
+$\mu_{40}=41$\,mPa\,s and $B=3100$\,K; and
+$C_{\text{leak}}(T)=C_0\,\mu_{40}/\mu(T)$ with $C_0=2\times10^{-13}$\,m$^3$/(s\,Pa).
+
+\begin{table}[h]
+\caption{Complete parameter set}
+\label{tab:fullparams}
+\centering
+\small
+\begin{tabular}{@{}lll@{}}
+\toprule
+Symbol & Value & Meaning\\
+\midrule
+$A_1$ & $7.854\times10^{-3}$\,m$^2$ & cap-side area\\
+$A_2$ & $5.391\times10^{-3}$\,m$^2$ & rod-side area\\
+$s_\ell$ & $1.0$\,m & stroke\\
+$V_{01},V_{02}$ & $2\times10^{-4}$\,m$^3$ & dead volumes\\
+$m$ & $200$\,kg & moving mass\\
+$P_s$ & $210$\,bar & supply (relief-set)\\
+$F_{\text{FS}}$ & $164.9$\,kN & force full scale\\
+$\beta_0$ & $1.5$\,GPa & bulk modulus @ $20\,$\textdegree C\\
+$\mu_{40}$ & $41$\,mPa\,s & viscosity @ $40\,$\textdegree C\\
+$C_0$ & $2\times10^{-13}$ & leak coeff @ $40\,$\textdegree C\\
+$C_q$ & $0.67$ & valve discharge coeff\\
+ref. freq / amp & $0.04$\,Hz / $1.1\,s_\ell$ & sine reference\\
+$K_p,K_i$ & $0.03,0.004$ & PI gains (spool m / m)\\
+sample rate & $1$\,kHz & sensor + observer\\
+duration & $32$\,s & per run\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Observer Algorithm}\label{app:obs}
+The observer runs at the sample rate. Per step:
+\begin{enumerate}
+\item Low-pass the measured pressures (40\,Hz) and flows (25\,Hz); form
+$\dot{P}_i$ by finite difference of the filtered pressure.
+\item Evaluate $\beta_e$, $C_{\text{leak}}$ from the noisy temperature reading.
+\item Compute per-chamber velocities $v_1,v_2$ from the rearranged continuity
+relations; blend by flow magnitude with a small regulariser so $v\to 0$ when both
+flows vanish.
+\item Integrate $x \mathrel{+}= v\,\Delta t$, clamped to $[{-}0.02,\,s_\ell{+}0.02]$.
+\item If seated (filtered flows small and $\max(P_1,P_2)>0.7\,P_s$) for $>0.3$\,s:
+pin $x$ to the corresponding stop; if additionally $\dot P\approx0$ (steady),
+update $b_1=Q_1-q_{\text{leak}}$, $b_2=Q_2+q_{\text{leak}}$.
+\item Output $\hat{x}$ and $\hat{F}=P_1 A_1-P_2 A_2$.
+\end{enumerate}
+The steady-pressure gate in step~5 is the single most important detail: without
+it, transient seatings (arrive-and-immediately-leave) capture compressibility
+flow as if it were bias and corrupt the calibration.
+
+\section{State-Space Model and the Extended Kalman Filter}\label{app:ekf}
+This section gives the principled estimator the observer of Sec.~\ref{sec:observer}
+approximates: a nonlinear state-space model and the Extended Kalman Filter (EKF)
+that is its textbook recursive estimator. We then explain why the deployed
+estimator is the reduced complementary observer rather than the full EKF.
+
+\subsection{Nonlinear state-space model}
+Take the state, augmented with the two flow-meter biases and the external load so
+they are estimated rather than assumed,
+\begin{equation}
+\boldsymbol{\xi} = \big[\,x,\ v,\ P_1,\ P_2,\ b_1,\ b_2,\ F_L\,\big]^{\!\top}.
+\end{equation}
+With measured flows $Q_1,Q_2$ and temperature as inputs, the continuous dynamics
+$\dot{\boldsymbol\xi}=\mathbf f(\boldsymbol\xi,\mathbf u)$ are
+\begin{align}
+\dot x   &= v, \\
+\dot v   &= \big(P_1 A_1 - P_2 A_2 - F_{\text{fric}}(v) - F_L\big)/m, \\
+\dot P_1 &= \tfrac{\beta_e}{V_1(x)}\big[(Q_1-b_1) - A_1 v - q_{\text{leak}}\big], \\
+\dot P_2 &= \tfrac{\beta_e}{V_2(x)}\big[(Q_2-b_2) + A_2 v + q_{\text{leak}}\big], \\
+\dot b_1 &= \dot b_2 = \dot F_L = 0 \quad(\text{random-walk states}),
+\end{align}
+with $V_1(x)=V_{01}+A_1x$, $V_2(x)=V_{02}+A_2(s_\ell-x)$ and
+$q_{\text{leak}}=C_{\text{leak}}(P_1-P_2)$. Only the two chamber pressures are
+measured,
+\begin{equation}
+\mathbf z = \mathbf h(\boldsymbol\xi) + \boldsymbol\nu
+          = [\,P_1,\ P_2\,]^{\!\top} + \boldsymbol\nu .
+\end{equation}
+Position is observable because $x$ enters the pressure dynamics through the
+volumes $V_i(x)$: $\partial \dot P_i/\partial x \neq 0$ whenever there is net
+chamber flow, so a pressure innovation carries information about $x$.
+
+\subsection{EKF recursion}
+Discretising to $\boldsymbol\xi_{k+1}=\mathbf f_d(\boldsymbol\xi_k,\mathbf u_k)+\mathbf w_k$
+with $\mathbf w_k\!\sim\!\mathcal N(0,\mathbf Q)$ and $\mathbf v_k\!\sim\!\mathcal N(0,\mathbf R)$,
+the EKF alternates
+\begin{align}
+\text{predict:}\quad & \hat{\boldsymbol\xi}^- = \mathbf f_d(\hat{\boldsymbol\xi},\mathbf u), \quad
+\mathbf P^- = \mathbf F\mathbf P\mathbf F^{\!\top} + \mathbf Q, \\
+\text{update:}\quad & \mathbf y = \mathbf z - \mathbf h(\hat{\boldsymbol\xi}^-), \quad
+\mathbf S = \mathbf H\mathbf P^-\mathbf H^{\!\top} + \mathbf R, \\
+& \mathbf K = \mathbf P^-\mathbf H^{\!\top}\mathbf S^{-1}, \quad
+\hat{\boldsymbol\xi} = \hat{\boldsymbol\xi}^- + \mathbf K\mathbf y, \\
+& \mathbf P = (\mathbf I-\mathbf K\mathbf H)\mathbf P^-(\mathbf I-\mathbf K\mathbf H)^{\!\top}
+            + \mathbf K\mathbf R\mathbf K^{\!\top},
+\end{align}
+the last in Joseph form for numerical stability. Here
+$\mathbf F=\partial\mathbf f_d/\partial\boldsymbol\xi|_{\hat{\boldsymbol\xi}}$ and
+$\mathbf H=\partial\mathbf h/\partial\boldsymbol\xi=[\,\mathbf 0\ \mathbf I_2\ \mathbf 0\,]$
+(it selects $P_1,P_2$). The load-bearing Jacobian entries are the pressure
+sensitivities
+\begin{equation}
+\frac{\partial \dot P_i}{\partial v} = \mp\frac{\beta_e A_i}{V_i(x)}, \qquad
+\frac{\partial \dot P_i}{\partial x} = -\frac{\beta_e A_i}{V_i(x)^2}\,(\,\cdots),
+\end{equation}
+which couple the pressure measurement to velocity and position, and
+$\partial\dot P_i/\partial b_i=-\beta_e/V_i$, which lets the filter learn the
+flow-meter biases. $\mathbf Q$ and $\mathbf R$ are set from the process and
+sensor-noise magnitudes of Table~\ref{tab:fullparams}.
+
+\subsection{Implementation and conditioning}
+A direct EKF on this plant is numerically delicate. The hydraulic stiffness makes
+$\beta_e/V_i \sim 10^{12}$--$10^{13}$, so the pressure Jacobian entries above are
+enormous, while the state magnitudes span $\sim\!10^{7}$\,(Pa) down to
+$\sim\!10^{-2}$\,(m/s) and $\sim\!10^{-5}$\,(m$^3$/s, bias): the covariance
+$\mathbf P$ is severely ill-conditioned, and an early prototype that inferred
+velocity by integrating the force balance \eqref{eq:newton} diverged. We made a
+runnable EKF with four ingredients: (i) \emph{non-dimensionalisation} -- each
+state is divided by a physical scale (stroke, $0.3$\,m/s, $P_s$, a bias scale,
+$F_{\text{FS}}$) so the scaled covariance is $O(1)$ and Jacobians are taken
+numerically in scaled space; (ii) \emph{semi-implicit (symplectic) Euler}
+sub-steps for the prediction, stable for the v--P oscillator where forward Euler
+at $1$\,kHz is not; (iii) the two \emph{flows as measurements}
+($h_Q=\pm A_i v + b_i + q_{\text{leak}} + (V_i/\beta_e)\dot P_i$, the
+compressibility term taken from the filtered measured pressure) to make velocity
+and bias observable; and (iv) seated \emph{pseudo-measurements} ($x{=}$stop,
+$v{=}0$) as the filter's homing. The complementary observer of
+Sec.~\ref{sec:observer} can then be read as a structurally-reduced form of this
+EKF: its velocity blend is the flow-measurement update on $v$, and its gated
+end-stop calibration is the $v{=}0$ pseudo-measurement that separates bias.
+Sec.~\ref{sec:ekf} benchmarks the two; the EKF is stable and competitive on force
+but worse and less robust on position, so the reduced observer is deployed and
+the EKF is kept for the covariance estimate it provides.
+
+\section{Hopsan Integration}\label{app:hopsan}
+\subsection{Parameterization}
+For each run the model parameters (geometry, the temperature-dependent
+$\beta_e$, $C_{\text{leak}}$ and viscous friction, the PI gains and the sine
+reference) are overridden, the model is simulated, and the pressure, flow and
+position time series are exported to the estimation pipeline.
+
+\subsection{Chamber pressure/flow logging}
+In Hopsan's TLM, two ports sharing a node are logged on one side, so the cap and
+rod chamber pressures and flows are read on the valve side (PA$\leftrightarrow$cap
+$A_1$, PB$\leftrightarrow$rod $A_2$): pressure is identical either side of a node,
+and the valve-port flow already equals flow into the chamber. Position is the
+shared cylinder/mass position.
+
+\subsection{Controller scaling}
+The valve \texttt{in} port is spool position in metres ($|x_v|\le x_{v\max}\approx
+0.01$), so $K_p\approx0.03$ maps a ${\sim}1$\,m position error to a ${\sim}0.01$\,m
+spool command. An early misconfiguration with $K_p=5$ slammed the valve fully
+open, producing an unphysical $2000$\,L/min and $358$\,bar; reducing the gain to
+the example's scale fixed it.
+
+\section{Per-Temperature Results}\label{app:results}
+Table~\ref{tab:pertemp} gives worst-case (over eight seeds) and mean-RMS errors at
+each temperature. Both metrics are essentially flat, confirming that the
+end-stop homing reset neutralises accumulated drift across the envelope.
+
+\begin{table}[h]
+\caption{Worst-case / mean-RMS error by temperature (8 seeds each)}
+\label{tab:pertemp}
+\centering
+\small
+\begin{tabular}{@{}ccccc@{}}
+\toprule
+$T$ (\textdegree C) & pos max & pos RMS & force 99.5 & force RMS\\
+ & (cm) & (cm) & (\% FS) & (\% FS)\\
+\midrule
+0  & 2.76 & 0.54 & 4.20 & 1.58\\
+10 & 2.77 & 0.54 & 4.20 & 1.58\\
+20 & 2.79 & 0.54 & 4.20 & 1.58\\
+30 & 2.81 & 0.55 & 4.20 & 1.58\\
+40 & 2.83 & 0.55 & 4.20 & 1.57\\
+50 & 2.85 & 0.55 & 4.20 & 1.57\\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\section{Failure Modes Encountered}\label{app:bugs}
+The spike surfaced several issues worth logging, since they shaped the design:
+\begin{itemize}
+\item \textbf{Position drift (13\,cm).} Long mid-stroke excursions with unlucky
+bias draws drifted far past target. Root cause: bias calibration was firing on
+transient seats. Fix: steady-pressure gate plus a duty cycle that dwells at
+stops.
+\item \textbf{Sign of valve-port flow.} The chamber-inflow convention required no
+sign flip on \texttt{PA/PB\#Flow}; an initial flip inverted the velocity (negative
+correlation with $\dot x$), caught by a correlation check.
+\item \textbf{Controller gain.} See \ref{app:hopsan}; a unit mismatch drove
+nonphysical flows until corrected.
+\item \textbf{(Earlier pure-Python plant, since replaced by Hopsan).} An
+explicit-RK4 prototype suffered end-stop-damping instability and cavitation
+blow-up, and an EKF that derived velocity by double-integrating the force balance
+diverged to over a metre of error. These motivated switching to a TLM solver for
+the truth model and to a flow-continuity observer. They are recorded here as part
+of the exploration history.
+\end{itemize}
+
+\section{Future Directions}\label{app:future}
+\begin{itemize}
+\item Densify the homing-interval / mismatch stress sweep (more seeds and
+frequencies) and report a tail metric (95th percentile / max-over-seeds) with
+bootstrap confidence intervals, turning the median/IQR guideline into a
+tail-reliability design rule.
+\item Improve the EKF (Sec.~\ref{sec:ekf}): better-calibrated covariance and
+faster pre-homing convergence (e.g.\ a UKF, or modelling the flow-measurement
+error during transients) to make its confidence band trustworthy.
+\item Sweep sensor grades to find the cheapest transducers that still pass.
+\item Bridge to hardware-style co-simulation via Hopsan's FMU export.
+\item Add within-stroke thermal transients with a custom temperature-aware
+cylinder component.
+\end{itemize}
+
+\section{Session Flow: Human vs.\ AI Effort}\label{app:session}
+Per the research-process requirement to preserve what was human input and what
+was AI effort, the spike proceeded through these human prompts (paraphrased), each
+answered by AI analysis, code and verification:
+\begin{enumerate}
+\item \emph{``A double-acting cylinder is coupled because flow and pressure at
+both ends set position and force, correct?''} AI: clarified the coupling
+(flow$\to$velocity$\to$position; pressure$\to$force) and offered a state-space
+model.
+\item \emph{``Set up a parametric offline simulation showing position error
+$\le\pm5$\,cm and force $\le\pm12\,\%$ FS across full stroke and
+$0$--$50\,$\textdegree C with realistic noise.''} AI: built a first plant,
+sensors, observer and sweep; iterated through stability and drift bugs to a
+passing result.
+\item \emph{``Can we use Hopsan for the modelling and simulation?''} AI:
+researched Hopsan's component library, TLM solver, temperature handling and
+interfaces; recommended Hopsan as the plant with the estimator kept in Python.
+\item \emph{``Refactor to only use Hopsan as the plant.''} AI: vendored the
+Position-Servo example, swapped the reference to a sine source, set up the
+parameter overrides, and validated the integration.
+\item \emph{``Run the sweep on the real simulator.''} AI: debugged the
+chamber pressure/flow logging and controller scaling, and ran the full sweep.
+\item \emph{``Treat this chat as a research spike and write it up in IEEE format,
+with figures of the sim, Hopsan, and plots.''} AI: built (from source) and
+captured the Hopsan model canvas (Fig.~\ref{fig:gui}), generated the figures and
+this paper, and ran an external (Codex) review.
+\item \emph{``Make the simulation more realistic.''} AI: added per-run plant/
+estimator parameter mismatch, Coulomb/stiction friction, finite valve bandwidth
+and full transducer dynamics (bandwidth, delay, drift, saturation); added the
+ablation study and the homing-interval stress test, which together identified the
+homing reset as the load-bearing mechanism.
+\item \emph{``Add the EKF theory, then implement a well-scaled EKF and benchmark
+it.''} AI: derived the state-space model and EKF recursion (App.~\ref{app:ekf}),
+implemented a non-dimensionalised, semi-implicit filter, and benchmarked it
+head-to-head against the observer (Sec.~\ref{sec:ekf}).
+\item \emph{``Compare with the Simscape lab model; is TLM any different?''} AI:
+contrasted the acausal-DAE and transmission-line approaches and added the
+solver-rationale discussion (Sec.~\ref{sec:tlm}).
+\item \emph{``Make an open-loop variant and extend the sweep to bench scale.''}
+AI: built the open-loop model variant, found and fixed an open-loop-only
+stop-identification failure (direction-of-travel homing), and validated the bench
+case (Sec.~\ref{sec:bench}).
+\item \emph{``Validate against the Zhou et al.\ experiment.''} AI: reconfigured
+the plant to their physical rig and showed agreement above $15$\,MPa plus
+independent confirmation of the low-pressure bulk-modulus mechanism
+(Sec.~\ref{sec:zhou}).
+\item \emph{``Add hose line losses with manifold-located sensors; sweep hose
+length.''} AI: added the volume$+$orifice line model, moved ground-truth force to
+the cylinder side, and produced the hose-length design rule (Sec.~\ref{sec:hose}).
+\item \emph{``Make it readable from first principles and more visual.''} AI:
+added the principle, observer and manifold diagrams (Figs.~\ref{fig:principle},
+\ref{fig:obsblock}, \ref{fig:manifold}), a plain-language primer and roadmap, and
+tightened the abstract. Final sweep: worst position $2.58$\,cm, operational force
+$5.08\,\%$ FS.
+\end{enumerate}
+All acceptance targets, the choice of Hopsan, and the scope were set by the human;
+the modelling, coding, debugging, figure generation and drafting were AI effort
+under that direction.
+
+\section{Code and Data Availability}\label{app:code}
+The harness (\texttt{cylinder\_sim/}: parameters, Hopsan driver, sensor model,
+observer, sweep, plots), the Hopsan model
+(\texttt{hopsan/sensorless\_cylinder\_plant.hmf}), the integration tests, and the
+figure-generation scripts accompany this paper in the spike directory.
