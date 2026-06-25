@@ -14,6 +14,19 @@
 \renewcommand{\sfdefault}{cmss}
 \renewcommand{\ttdefault}{cmtt}
 
+% Float placement: keep figures on/near the page that references them rather
+% than letting many [t]-only floats queue up and drift pages later.
+\renewcommand{\topfraction}{0.92}
+\renewcommand{\bottomfraction}{0.85}
+\renewcommand{\textfraction}{0.08}
+\renewcommand{\floatpagefraction}{0.75}
+\renewcommand{\dbltopfraction}{0.92}
+\renewcommand{\dblfloatpagefraction}{0.75}
+\setcounter{topnumber}{3}
+\setcounter{bottomnumber}{2}
+\setcounter{totalnumber}{4}
+\setcounter{dbltopnumber}{2}
+
 \begin{document}
 
 \title{Sensorless Position and Force Estimation for a\\
@@ -124,7 +137,7 @@ Reading force from the chamber pressures is standard \cite{alleyne2000force};
 sensorless \emph{position} is the harder half, because of the integration-drift
 problem noted above.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.84\textwidth]{../figures/fig_principle.png}
 \caption{The double-acting cylinder as a coupled system, from first principles.
@@ -170,7 +183,7 @@ cylinder pressure exactly (Fig.~\ref{fig:manifold}; the full ISO schematic with
 the hoses highlighted is Fig.~\ref{fig:canvas})---a deliberate, quantifiable
 error source studied in Sec.~\ref{sec:hose}.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_manifold.png}
 \caption{Manifold-located sensing. The transducers tap the valve block; a hose of
@@ -181,7 +194,7 @@ viscous oil.}
 \label{fig:manifold}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_hopsan_model.png}
 \caption{Block schematic of the Hopsan plant: a PI position controller drives a
@@ -293,7 +306,7 @@ keeps nominal values. This converts the sweep from a noise-robustness test into 
 genuine \emph{model-mismatch} test.
 \end{itemize}
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_fluid_temp.png}
 \caption{Temperature-dependent fluid parameters injected into the Hopsan model
@@ -310,7 +323,7 @@ reference is a sine of amplitude $1.1\times$ stroke, so the servo sweeps the ful
 stroke and seats both end-stops each half cycle; the seating events are what the
 observer uses for calibration.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_hopsan_gui.png}
 \caption{The Hopsan plant model with the standard ISO fluid-power symbols: the
@@ -322,7 +335,7 @@ is rendered independently from the \texttt{.hmf} for labelling.}
 \label{fig:gui}
 \end{figure}
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.95\textwidth]{../figures/fig_hopsan_canvas.png}
 \caption{Annotated ISO-1219 schematic of the same plant, with the
@@ -349,7 +362,7 @@ saturate near the relief setting when the piston seats, and flows reverse with
 stroke direction; the faint traces are the noisy measurements the observer
 actually sees.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_signals.png}
 \caption{Synthetic sensor streams from the Hopsan plant at $40\,$\textdegree C.
@@ -401,7 +414,7 @@ $\beta(T)$, $\mu(T)$, $C_{\text{leak}}(T)$ curves as the plant, so the
 compressibility and leakage corrections track temperature with residual mismatch.
 Figure~\ref{fig:obsblock} shows the full signal flow.
 
-\begin{figure*}[t]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.92\textwidth]{../figures/fig_observer_block.png}
 \caption{The complementary observer as a signal-flow graph. The fast path
@@ -435,7 +448,7 @@ reducing the slope at which error grows \emph{between} seats. Reset corrects the
 symptom now; calibration slows future growth. Which one dominates depends on how
 often the piston seats, examined in Sec.~\ref{sec:results}.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_homing_concept.png}
 \caption{The two end-stop corrections. (a) When seated, position is known
@@ -492,7 +505,7 @@ and both end-stop seatings; the error trace stays within about $1.1$\,cm, with
 small steps at the homing events where the bias is recalibrated. The force
 estimate, read from pressures, sits within a few percent of full scale throughout.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_trajectory.png}
 \caption{Representative run at $50\,$\textdegree C. Left: true vs estimated
@@ -515,7 +528,7 @@ position error stays inside the $\pm 5$\,cm band throughout, with the largest
 excursions during the mid-stroke window between homing events, while the
 force-error traces form a tight band near $\pm 4\,\%$ FS.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_sweep.png}
 \caption{Worst-case and mean error versus oil temperature. Both metrics stay flat
@@ -523,7 +536,7 @@ and far below the limits across $0$--$50\,$\textdegree C.}
 \label{fig:sweep}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_error_hist.png}
 \caption{Error distributions over all 48 Monte-Carlo runs. Every run is inside
@@ -531,7 +544,7 @@ both acceptance limits (red dashed); worst cases marked.}
 \label{fig:hist}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_mc_ensemble.png}
 \caption{Monte-Carlo ensemble: all 48 error-vs-time traces overlaid, coloured by
@@ -555,7 +568,7 @@ seating the homing reset dominates, and calibration matters mainly for large bia
 or sparse homing. The leakage, compressibility, single-chamber and temperature
 variants stay near $2$--$2.5$\,cm: second-order refinements.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_ablation.png}
 \caption{Observer ablations (worst case over a temperature/seed subset, log
@@ -584,7 +597,7 @@ of the between-seat slope and cannot bound dead-reckoning drift on its own.
 Calibration is a useful refinement (it extends the usable interval modestly), not
 the foundation.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_stress_dense.png}
 \caption{Dense homing-interval stress test (median, inter-quartile band; 8 seeds).
@@ -617,7 +630,7 @@ small). The estimation itself is therefore robust across the envelope, subject t
 two clean sensor-sizing rules: \textbf{size the pressure transducer to the supply
 (for force) and the flow meter to the cylinder area (for position)}.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_pressure_sweep.png}
 \caption{Supply-pressure sweep ($100$\,mm cylinder). Position is flat; force error
@@ -626,7 +639,7 @@ matched to the supply.}
 \label{fig:pressure}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_betaP.png}
 \caption{Entrained-air bulk modulus. Left: $\beta_{eff}(P)$ collapses below
@@ -636,7 +649,7 @@ is $\beta$-insensitive.}
 \label{fig:betaP}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_bore_sweep.png}
 \caption{Bore sweep ($63$--$160$\,mm, area-similarity scaling). With a flow meter
@@ -674,7 +687,7 @@ shows the mechanism directly in a single Hopsan run: a standing offset between t
 measured (manifold) and true (cylinder) pressures---the force-channel error---plus
 a sharp transient at each direction reversal.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_transient.png}
 \caption{Hopsan pressure transient across a $12$\,m hose at $0$\,\textdegree C.
@@ -685,7 +698,7 @@ and spiking at the reversal near $10.1$\,s.}
 \label{fig:transient}
 \end{figure}
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_hose_sweep.png}
 \caption{Hose-length sweep with manifold-located sensors ($100$\,mm cylinder,
@@ -737,7 +750,7 @@ Sec.~\ref{sec:ablation-finding}: homing is load-bearing, but only if the reset c
 reliably tell the stops apart---and outside closed-loop control that identification
 must come from motion history, not instantaneous pressure.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_bench_sweep.png}
 \caption{Bench-scale, \emph{open-loop} sweep ($40$\,mm bore, $0.1$\,m stroke,
@@ -788,7 +801,7 @@ dynamics are stiff. The EKF's one real advantage is the covariance it carries
 well-calibrated would need further tuning. This is consistent with the ablation:
 the homing reset bounds position, and both estimators depend on it.
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_ekf_compare.png}
 \caption{EKF vs complementary observer on one run ($50\,$\textdegree C). Top:
@@ -860,7 +873,7 @@ rises at low supply only through fixed-transducer SNR, the $1/P$ effect of
 Fig.~\ref{fig:pressure}, reaching $\sim\!22\,\%$ FS at $5$\,MPa with a $40$\,MPa
 transducer and falling below $5\,\%$ once the supply exceeds $20$\,MPa.)
 
-\begin{figure}[t]
+\begin{figure}[!tb]
 \centering
 \includegraphics[width=\linewidth]{../figures/fig_zhou_validation.png}
 \caption{Validation against the physical experiment of \cite{zhou2022pressure}
