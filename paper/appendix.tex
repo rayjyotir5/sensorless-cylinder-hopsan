@@ -279,7 +279,15 @@ the modelling, coding, debugging, figure generation and drafting were AI effort
 under that direction.
 
 \section{Code and Data Availability}\label{app:code}
-The harness (\texttt{cylinder\_sim/}: parameters, Hopsan driver, sensor model,
-observer, sweep, plots), the Hopsan model
-(\texttt{hopsan/sensorless\_cylinder\_plant.hmf}), the integration tests, and the
-figure-generation scripts accompany this paper in the spike directory.
+The complete harness is open-source at
+\begin{center}
+\url{https://github.com/rayjyotir5/sensorless-cylinder-hopsan}
+\end{center}
+comprising the estimator and plant driver
+(\texttt{src/cylinder\_sim/}: parameters, Hopsan driver, sensor model, the
+complementary observer and the EKF, sweep and plots), the Hopsan models
+(\texttt{src/hopsan/sensorless\_cylinder\_plant.hmf} and the open-loop variant)
+with a reproducible head-less HopsanCLI build script, the integration tests, and
+one figure-generation script per figure in this paper. The referenced
+experimental data of \cite{zhou2022pressure} and any third-party lab models are
+not redistributed.
